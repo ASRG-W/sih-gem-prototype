@@ -39,11 +39,11 @@
     <!-- DASHBOARD SECTION -->
     <main id="dashboard" class="hidden">
         
-        <!-- Summary Banner -->
-        <div id="summary-banner" class="hidden mb-6 p-4 rounded-lg border border-red-500 bg-red-900/30 flex justify-between items-center">
+        <!-- Dynamic Summary Banner -->
+        <div id="summary-banner" class="hidden mb-6 p-4 rounded-lg border flex justify-between items-center transition-all duration-500">
             <div>
-                <h3 class="text-red-400 font-bold text-lg">⚠️ VERIFICATION FAILED</h3>
-                <p class="text-gray-300 text-sm mt-1">Confidence: 94% | Discrepancies: 1 Fatal, 1 Warning, 1 Missing Data</p>
+                <h3 id="banner-title" class="font-bold text-lg"></h3>
+                <p id="banner-desc" class="text-gray-300 text-sm mt-1"></p>
             </div>
             <div class="space-x-3">
                 <button onclick="logDecision('Accepted')" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded border border-green-400 transition shadow-[0_0_10px_rgba(34,197,94,0.3)]">Accept Profile</button>
@@ -74,7 +74,7 @@
     </main>
 
     <script>
-        // Default Demo Data - Personalized & Trapped!
+        // Default Demo Data
         const defaultPDF = {
             "Vendor_Name": "Aayush Singh Rajput - DevSync",
             "PAN_Number": "ABCDE1234F",
@@ -87,7 +87,7 @@
             "PAN_Number": "ABCDE1234F",
             "Registered_Address": "Plot 42, Phase 1, Industrial Area, New Delhi 110020",
             "Annual_Turnover_INR": "1200000",
-            "MSME_Status": "" // The "Missing Data" Trap
+            "MSME_Status": "" 
         };
 
         // Initialize Textareas
@@ -119,6 +119,10 @@
             pdfContainer.innerHTML = '';
             apiContainer.innerHTML = '';
 
+            let fatalCount = 0;
+            let warnCount = 0;
+            let missingCount = 0;
+
             Object.keys(currentAPI).forEach(key => {
                 let statusClass = "bg-gray-800 border-gray-700 text-gray-200";
                 let badgeHTML = "";
@@ -130,15 +134,18 @@
                     if (valAPI === "" && valPDF !== "") {
                         statusClass = "bg-orange-900/40 border-orange-500 text-white";
                         badgeHTML = `<span class="bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase tracking-wide">Missing Data</span>`;
+                        missingCount++;
                     } else if (valPDF === valAPI) {
                         statusClass = "bg-green-900/20 border-green-500/50 text-white";
                         badgeHTML = `<span class="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase tracking-wide">Verified</span>`;
                     } else if (key.includes("Turnover")) {
                         statusClass = "bg-red-900/40 border-red-500 text-white";
                         badgeHTML = `<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase tracking-wide">Fatal Mismatch</span>`;
+                        fatalCount++;
                     } else {
                         statusClass = "bg-yellow-900/30 border-yellow-500 text-white";
                         badgeHTML = `<span class="bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase tracking-wide">Warning</span>`;
+                        warnCount++;
                     }
                 }
 
@@ -155,6 +162,36 @@
                 pdfContainer.innerHTML += createCard(key, currentPDF[key]);
                 apiContainer.innerHTML += createCard(key, currentAPI[key]);
             });
+
+            if (auditComplete) {
+                updateBanner(fatalCount, warnCount, missingCount);
+            }
+        }
+
+        function updateBanner(fatal, warn, missing) {
+            const banner = document.getElementById('summary-banner');
+            const title = document.getElementById('banner-title');
+            const desc = document.getElementById('banner-desc');
+
+            // Reset classes
+            banner.className = "mb-6 p-4 rounded-lg border flex justify-between items-center transition-all duration-500";
+
+            if (fatal > 0) {
+                banner.className += " border-red-500 bg-red-900/30";
+                title.className = "font-bold text-lg text-red-400";
+                title.innerHTML = "⚠️ VERIFICATION FAILED";
+            } else if (warn > 0 || missing > 0) {
+                banner.className += " border-yellow-500 bg-yellow-900/30";
+                title.className = "font-bold text-lg text-yellow-400";
+                title.innerHTML = "⚠️ MANUAL REVIEW REQUIRED";
+            } else {
+                banner.className += " border-green-500 bg-green-900/30";
+                title.className = "font-bold text-lg text-green-400";
+                title.innerHTML = "✅ VERIFICATION PASSED";
+            }
+
+            desc.innerHTML = `Confidence: 94% | Discrepancies: ${fatal} Fatal, ${warn} Warning, ${missing} Missing Data`;
+            banner.classList.remove('hidden');
         }
 
         function runAudit() {
@@ -162,12 +199,10 @@
             btn.innerText = "Processing LLM...";
             btn.classList.add('opacity-50', 'cursor-not-allowed', 'animate-pulse');
             
-            // Simulate AI processing delay for demo effect
             setTimeout(() => {
                 auditComplete = true;
                 btn.innerText = "Audit Complete";
                 btn.classList.remove('animate-pulse');
-                document.getElementById('summary-banner').classList.remove('hidden');
                 renderFields();
             }, 1200);
         }
