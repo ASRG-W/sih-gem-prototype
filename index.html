@@ -15,118 +15,160 @@
 </head>
 <body class="bg-gemDark text-gray-200 font-sans p-6 min-h-screen">
 
-    <!-- Header -->
+    <!-- Header with Mock Role Switcher -->
     <header class="mb-8 border-b border-gray-700 pb-4">
         <div class="flex justify-between items-end">
             <div>
                 <h1 class="text-3xl font-bold text-white tracking-tight">GeM-AuditAI <span class="text-blue-500 text-lg ml-2">Twin-Schema Engine</span></h1>
                 <p class="text-gray-400 text-sm mt-1">SIH Problem Statement 26100 | Team DevSync</p>
             </div>
-            <div class="text-right">
-                <span class="bg-gray-800 text-xs text-gray-400 px-3 py-1 rounded border border-gray-700">Vendor-to-Officer Pipeline</span>
+            
+            <!-- THE MOCK LOGIN SWITCHER -->
+            <div class="flex items-center space-x-2 bg-gray-900 p-1 rounded-lg border border-gray-700">
+                <span class="text-xs text-gray-500 font-bold px-2 uppercase">Simulate Login:</span>
+                <button id="tab-vendor" onclick="switchRole('vendor')" class="bg-blue-600 text-white text-sm font-bold py-1 px-4 rounded transition shadow">🏢 Vendor</button>
+                <button id="tab-officer" onclick="switchRole('officer')" class="bg-transparent hover:bg-gray-800 text-gray-400 text-sm font-bold py-1 px-4 rounded transition">👮 Officer</button>
             </div>
         </div>
     </header>
 
-    <!-- VENDOR PORTAL (Simulation) -->
-    <section id="vendor-portal" class="mb-6 bg-gemCard p-4 rounded-lg border border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-        <h2 class="text-xl font-semibold mb-2 text-white">🏢 Vendor Submission Portal (Client-Side)</h2>
-        <p class="text-gray-400 text-sm mb-4">Vendors upload documents here. Edge OCR processes it on their device, sending only the JSON payload and image reference to the GeM queue.</p>
+    <!-- ========================================== -->
+    <!-- VIEW 1: VENDOR SUBMISSION PORTAL -->
+    <!-- ========================================== -->
+    <section id="view-vendor" class="mb-6 max-w-3xl mx-auto bg-gemCard p-8 rounded-lg border border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+        <h2 class="text-2xl font-bold mb-2 text-white">Vendor Bid Submission</h2>
+        <p class="text-gray-400 text-sm mb-6">Upload your compliance documents. Our edge-AI will process them locally to ensure data privacy before submitting to the GeM network.</p>
         
-        <div class="flex items-center space-x-4">
-            <input type="file" id="file-upload" accept="image/*" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 transition cursor-pointer" onchange="runLiveOCR(event)">
+        <div class="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-blue-500 transition">
+            <input type="file" id="file-upload" accept="image/*" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 transition cursor-pointer mx-auto" onchange="runLiveOCR(event)">
         </div>
 
-        <div id="ocr-status-container" class="hidden mt-4">
-            <p id="ocr-status-text" class="text-yellow-400 font-bold text-sm mb-2 animate-pulse">Processing Document on Vendor Device...</p>
-            <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+        <div id="ocr-status-container" class="hidden mt-6 bg-gray-900 p-4 rounded border border-gray-700">
+            <p id="ocr-status-text" class="text-yellow-400 font-bold text-sm mb-2 animate-pulse">Running Edge OCR...</p>
+            <div class="w-full bg-gray-700 rounded-full h-2.5 mb-2">
                 <div id="ocr-progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
             </div>
-            <textarea id="raw-ocr-text" class="hidden w-full h-16 bg-gray-900 border border-gray-600 text-gray-300 font-mono text-[10px] p-2 rounded mt-1" readonly></textarea>
+            <!-- The Submit Button appears AFTER OCR is done -->
+            <button id="btn-submit-bid" onclick="submitBidToQueue()" class="hidden w-full mt-4 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded shadow transition">Submit Encrypted Payload to GeM</button>
         </div>
         
         <!-- Hidden Data Bridges -->
         <textarea id="input-pdf" class="hidden"></textarea>
         <textarea id="input-api" class="hidden"></textarea>
-        <button id="send-to-queue-btn" onclick="loadData()" class="hidden mt-4 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition">Send to Officer Review Queue</button>
     </section>
 
-    <!-- OFFICER DASHBOARD SECTION -->
-    <main id="dashboard" class="hidden">
-        <h2 class="text-2xl font-bold mb-4 text-white border-b border-gray-700 pb-2">👮 Procurement Officer Dashboard</h2>
+    <!-- ========================================== -->
+    <!-- VIEW 2: OFFICER DASHBOARD -->
+    <!-- ========================================== -->
+    <section id="view-officer" class="hidden">
         
-        <!-- Dynamic Summary Banner -->
-        <div id="summary-banner" class="mb-6 p-5 rounded-lg border flex justify-between items-center transition-all duration-500">
-            <div class="flex-1">
-                <div class="flex items-center space-x-4 mb-2">
-                    <h3 id="banner-title" class="font-bold text-2xl tracking-tight"></h3>
-                    <span id="risk-badge" class="px-3 py-1 rounded text-xs font-bold uppercase tracking-wider"></span>
-                </div>
-                <div class="grid grid-cols-3 gap-4 mt-3">
-                    <div class="bg-black/30 p-2 rounded border border-white/10">
-                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Compliance Score</p>
-                        <p id="score-text" class="text-xl font-mono font-bold"></p>
-                    </div>
-                    <div class="bg-black/30 p-2 rounded border border-white/10">
-                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">AI Recommendation</p>
-                        <p id="recommendation-text" class="text-sm font-bold mt-1"></p>
-                    </div>
-                    <div class="bg-black/30 p-2 rounded border border-white/10">
-                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Discrepancy Count</p>
-                        <p id="desc-text" class="text-xs mt-1 font-mono"></p>
-                    </div>
-                </div>
-            </div>
-            <div class="space-x-3 ml-6 flex flex-col space-y-2">
-                <button onclick="logDecision('Accepted')" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded border border-green-400 transition shadow-[0_0_10px_rgba(34,197,94,0.3)]">Approve Bid</button>
-                <button onclick="logDecision('Rejected')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded border border-red-400 transition shadow-[0_0_10px_rgba(239,68,68,0.3)]">Reject Bid</button>
-            </div>
+        <!-- Empty Queue State -->
+        <div id="empty-queue" class="text-center py-20">
+            <div class="text-6xl mb-4">📭</div>
+            <h2 class="text-2xl font-bold text-gray-400">Queue is Empty</h2>
+            <p class="text-gray-500">No pending vendor bids require your review at this time.</p>
         </div>
 
-        <!-- 3-Column Viewer (Image + PDF + API) -->
-        <div class="grid grid-cols-3 gap-4">
-            
-            <!-- Column 1: The Visual Evidence -->
-            <div class="bg-gemCard rounded-lg p-4 border border-gray-700 shadow-lg col-span-1 flex flex-col">
-                <h3 class="text-gray-400 font-bold mb-4 border-b border-gray-700 pb-2">🖼️ Vendor Uploaded Evidence</h3>
-                <div class="flex-1 bg-gray-900 rounded border border-gray-700 flex items-center justify-center p-2">
-                    <img id="document-preview" src="" alt="Uploaded Document" class="max-h-96 w-full object-contain rounded">
+        <!-- Populated Dashboard State -->
+        <div id="populated-dashboard" class="hidden">
+            <!-- Dynamic Summary Banner -->
+            <div id="summary-banner" class="mb-6 p-5 rounded-lg border flex justify-between items-center transition-all duration-500">
+                <div class="flex-1">
+                    <div class="flex items-center space-x-4 mb-2">
+                        <h3 id="banner-title" class="font-bold text-2xl tracking-tight"></h3>
+                        <span id="risk-badge" class="px-3 py-1 rounded text-xs font-bold uppercase tracking-wider"></span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mt-3">
+                        <div class="bg-black/30 p-2 rounded border border-white/10">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Compliance Score</p>
+                            <p id="score-text" class="text-xl font-mono font-bold"></p>
+                        </div>
+                        <div class="bg-black/30 p-2 rounded border border-white/10">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">AI Recommendation</p>
+                            <p id="recommendation-text" class="text-sm font-bold mt-1"></p>
+                        </div>
+                        <div class="bg-black/30 p-2 rounded border border-white/10">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Discrepancy Count</p>
+                            <p id="desc-text" class="text-xs mt-1 font-mono"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-x-3 ml-6 flex flex-col space-y-2">
+                    <button onclick="logDecision('Accepted')" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded border border-green-400 transition shadow-[0_0_10px_rgba(34,197,94,0.3)]">Approve Bid</button>
+                    <button onclick="logDecision('Rejected')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded border border-red-400 transition shadow-[0_0_10px_rgba(239,68,68,0.3)]">Reject Bid</button>
                 </div>
             </div>
 
-            <!-- Column 2 & 3: The Data Comparison -->
-            <div class="col-span-2 grid grid-cols-2 gap-4">
-                <div class="bg-gemCard rounded-lg p-4 border border-gray-700 shadow-lg">
-                    <h3 class="text-gray-400 font-bold mb-4 border-b border-gray-700 pb-2">📄 AI Extracted Data</h3>
-                    <div id="pdf-fields" class="space-y-3"></div>
+            <!-- 3-Column Viewer (Image + PDF + API) -->
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-gemCard rounded-lg p-4 border border-gray-700 shadow-lg col-span-1 flex flex-col">
+                    <h3 class="text-gray-400 font-bold mb-4 border-b border-gray-700 pb-2">🖼️ Vendor Evidence</h3>
+                    <div class="flex-1 bg-gray-900 rounded border border-gray-700 flex items-center justify-center p-2">
+                        <img id="document-preview" src="" alt="Uploaded Document" class="max-h-96 w-full object-contain rounded">
+                    </div>
                 </div>
-                
-                <div class="bg-gemCard rounded-lg p-4 border border-gray-700 shadow-lg">
-                    <h3 class="text-gray-400 font-bold mb-4 border-b border-gray-700 pb-2">🏛️ Govt API Ground Truth</h3>
-                    <div id="api-fields" class="space-y-3"></div>
+                <div class="col-span-2 grid grid-cols-2 gap-4">
+                    <div class="bg-gemCard rounded-lg p-4 border border-gray-700 shadow-lg">
+                        <h3 class="text-gray-400 font-bold mb-4 border-b border-gray-700 pb-2">📄 AI Extracted Data</h3>
+                        <div id="pdf-fields" class="space-y-3"></div>
+                    </div>
+                    <div class="bg-gemCard rounded-lg p-4 border border-gray-700 shadow-lg">
+                        <h3 class="text-gray-400 font-bold mb-4 border-b border-gray-700 pb-2">🏛️ Govt API Ground Truth</h3>
+                        <div id="api-fields" class="space-y-3"></div>
+                    </div>
                 </div>
             </div>
-
         </div>
-    </main>
+    </section>
 
     <script>
         let currentPDF = {};
         let currentAPI = {};
+        let bidInQueue = false; // Tracks if a vendor has submitted a bid
 
+        // --- ROLE SWITCHER LOGIC ---
+        function switchRole(role) {
+            const tabVendor = document.getElementById('tab-vendor');
+            const tabOfficer = document.getElementById('tab-officer');
+            const viewVendor = document.getElementById('view-vendor');
+            const viewOfficer = document.getElementById('view-officer');
+
+            if (role === 'vendor') {
+                tabVendor.className = "bg-blue-600 text-white text-sm font-bold py-1 px-4 rounded transition shadow";
+                tabOfficer.className = "bg-transparent hover:bg-gray-800 text-gray-400 text-sm font-bold py-1 px-4 rounded transition";
+                viewVendor.classList.remove('hidden');
+                viewOfficer.classList.add('hidden');
+            } else {
+                tabOfficer.className = "bg-gray-700 text-white text-sm font-bold py-1 px-4 rounded border border-gray-500 transition shadow";
+                tabVendor.className = "bg-transparent hover:bg-gray-800 text-gray-400 text-sm font-bold py-1 px-4 rounded transition";
+                viewVendor.classList.add('hidden');
+                viewOfficer.classList.remove('hidden');
+                
+                // Check if queue has items
+                if (bidInQueue) {
+                    document.getElementById('empty-queue').classList.add('hidden');
+                    document.getElementById('populated-dashboard').classList.remove('hidden');
+                    loadData();
+                } else {
+                    document.getElementById('empty-queue').classList.remove('hidden');
+                    document.getElementById('populated-dashboard').classList.add('hidden');
+                }
+            }
+        }
+
+        // --- VENDOR OCR LOGIC ---
         async function runLiveOCR(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            // Load Image for Officer Preview
-            const previewUrl = URL.createObjectURL(file);
-            document.getElementById('document-preview').src = previewUrl;
-
+            document.getElementById('document-preview').src = URL.createObjectURL(file);
+            
             const statusContainer = document.getElementById('ocr-status-container');
             const statusText = document.getElementById('ocr-status-text');
             const progressBar = document.getElementById('ocr-progress-bar');
+            const submitBtn = document.getElementById('btn-submit-bid');
             
-            document.getElementById('dashboard').classList.add('hidden');
+            submitBtn.classList.add('hidden');
             statusContainer.classList.remove('hidden');
             statusText.innerText = "Extracting with Tesseract.js Edge AI...";
             progressBar.style.width = "10%";
@@ -142,7 +184,6 @@
                 });
                 const ret = await worker.recognize(file);
                 const extractedText = ret.data.text;
-                document.getElementById('raw-ocr-text').value = extractedText; 
                 progressBar.classList.replace('bg-blue-600', 'bg-green-500');
 
                 let parsedJSON = {};
@@ -150,7 +191,7 @@
 
                 const cleanText = extractedText.replace(/,/g, '').toLowerCase();
                 
-                // 3-WAY MAGIC SWITCH (Unchanged Logic)
+                // 3-WAY MAGIC SWITCH 
                 if (cleanText.includes("12000000")) {
                     parsedJSON = { "Vendor_Name": "Aayush Singh Rajput - DevSync", "PAN_Number": "ABCDE1234F", "GST_Filing_Status": "Active - Filed", "Udyam_MSME_Status": "Micro Enterprise", "EPFO_Compliance": "Compliant", "Debarment_Status": "Clear", "Annual_Turnover_INR": "12000000" };
                     targetAPI = { "Vendor_Name": "Aayush S. Rajput - DevSync", "PAN_Number": "ABCDE1234F", "GST_Filing_Status": "Active - Filed", "Udyam_MSME_Status": "Micro Enterprise", "EPFO_Compliance": "", "Debarment_Status": "Clear", "Annual_Turnover_INR": "1200000" };
@@ -167,14 +208,9 @@
                 document.getElementById('input-pdf').value = JSON.stringify(parsedJSON);
                 document.getElementById('input-api').value = JSON.stringify(targetAPI);
                 
-                statusText.innerText = `✅ Payload Ready! Simulating transfer to Officer Queue...`;
+                statusText.innerText = `✅ Payload Ready!`;
                 statusText.className = "text-green-400 font-bold text-sm mb-2";
-                
-                // Automatically load the officer dashboard after 1 second to simulate the workflow
-                setTimeout(() => {
-                    document.getElementById('vendor-portal').classList.add('hidden');
-                    loadData();
-                }, 1200);
+                submitBtn.classList.remove('hidden'); // Show the submit button
                 
                 await worker.terminate();
             } catch (err) {
@@ -183,10 +219,20 @@
             }
         }
 
+        function submitBidToQueue() {
+            bidInQueue = true; // Flag that data is waiting
+            document.getElementById('ocr-status-container').innerHTML = `
+                <div class="bg-green-900/30 border border-green-500 p-4 rounded text-center">
+                    <p class="text-green-400 font-bold text-lg">✅ Bid Successfully Submitted to GeM Network</p>
+                    <p class="text-gray-400 text-sm mt-1">Awaiting Officer Review.</p>
+                </div>
+            `;
+        }
+
+        // --- OFFICER RENDER LOGIC ---
         function loadData() {
             currentPDF = JSON.parse(document.getElementById('input-pdf').value);
             currentAPI = JSON.parse(document.getElementById('input-api').value);
-            document.getElementById('dashboard').classList.remove('hidden');
             renderFields();
         }
 
@@ -231,11 +277,9 @@
                         <div class="font-mono text-xs tracking-tight">${value || '<span class="text-orange-400 italic">No Record</span>'}</div>
                     </div>
                 `;
-
                 pdfContainer.innerHTML += createCard(key, currentPDF[key]);
                 apiContainer.innerHTML += createCard(key, currentAPI[key]);
             });
-
             updateBanner(fatalCount, warnCount, missingCount);
         }
 
@@ -273,10 +317,23 @@
 
         function logDecision(decision) {
             alert(`✅ Decision Logged: Profile ${decision} by Procurement Officer.\nAudit trail securely saved.`);
-            // Reset for next demo
-            document.getElementById('dashboard').classList.add('hidden');
-            document.getElementById('vendor-portal').classList.remove('hidden');
-            document.getElementById('ocr-status-container').classList.add('hidden');
+            
+            // Hard reset the system for the next demo
+            bidInQueue = false; 
+            document.getElementById('file-upload').value = ""; // Clear file
+            document.getElementById('ocr-status-container').classList.add('hidden'); // Hide status
+            
+            // Re-render the original HTML inside the status container so it's fresh
+            document.getElementById('ocr-status-container').innerHTML = `
+                <p id="ocr-status-text" class="text-yellow-400 font-bold text-sm mb-2 animate-pulse">Running Edge OCR...</p>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mb-2">
+                    <div id="ocr-progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <button id="btn-submit-bid" onclick="submitBidToQueue()" class="hidden w-full mt-4 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded shadow transition">Submit Encrypted Payload to GeM</button>
+            `;
+            
+            // Switch back to vendor view automatically
+            switchRole('vendor');
         }
     </script>
 </body>
