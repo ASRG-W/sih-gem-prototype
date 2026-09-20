@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GeM-AuditAI Verification Dashboard</title>
-    <!-- Tailwind CSS & REAL Tesseract.js -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script>
@@ -24,52 +23,40 @@
                 <p class="text-gray-400 text-sm mt-1">SIH Problem Statement 26100 | Team DevSync</p>
             </div>
             <div class="text-right">
-                <span class="bg-gray-800 text-xs text-gray-400 px-3 py-1 rounded border border-gray-700">API Setu Compliant Framework</span>
+                <span class="bg-gray-800 text-xs text-gray-400 px-3 py-1 rounded border border-gray-700">Vendor-to-Officer Pipeline</span>
             </div>
         </div>
     </header>
 
-    <!-- LIVE OCR MODULE -->
-    <section class="mb-6 bg-gemCard p-4 rounded-lg border border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-        <h2 class="text-xl font-semibold mb-2 text-white">🔍 Step 1: Document Upload & OCR Extraction</h2>
-        <p class="text-gray-400 text-sm mb-4">AI will extract document text, map to statutory fields (GST, Udyam, EPFO, PAN), and fetch Gov API truth.</p>
+    <!-- VENDOR PORTAL (Simulation) -->
+    <section id="vendor-portal" class="mb-6 bg-gemCard p-4 rounded-lg border border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+        <h2 class="text-xl font-semibold mb-2 text-white">🏢 Vendor Submission Portal (Client-Side)</h2>
+        <p class="text-gray-400 text-sm mb-4">Vendors upload documents here. Edge OCR processes it on their device, sending only the JSON payload and image reference to the GeM queue.</p>
         
         <div class="flex items-center space-x-4">
             <input type="file" id="file-upload" accept="image/*" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 transition cursor-pointer" onchange="runLiveOCR(event)">
         </div>
 
-        <!-- OCR Loading & Output -->
         <div id="ocr-status-container" class="hidden mt-4">
-            <p id="ocr-status-text" class="text-yellow-400 font-bold text-sm mb-2 animate-pulse">Processing Document...</p>
+            <p id="ocr-status-text" class="text-yellow-400 font-bold text-sm mb-2 animate-pulse">Processing Document on Vendor Device...</p>
             <div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
                 <div id="ocr-progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
             </div>
-            <p class="text-xs text-gray-400 uppercase font-bold">Raw Extraction Log:</p>
-            <textarea id="raw-ocr-text" class="w-full h-16 bg-gray-900 border border-gray-600 text-gray-300 font-mono text-[10px] p-2 rounded mt-1" readonly></textarea>
+            <textarea id="raw-ocr-text" class="hidden w-full h-16 bg-gray-900 border border-gray-600 text-gray-300 font-mono text-[10px] p-2 rounded mt-1" readonly></textarea>
         </div>
+        
+        <!-- Hidden Data Bridges -->
+        <textarea id="input-pdf" class="hidden"></textarea>
+        <textarea id="input-api" class="hidden"></textarea>
+        <button id="send-to-queue-btn" onclick="loadData()" class="hidden mt-4 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition">Send to Officer Review Queue</button>
     </section>
 
-    <!-- DEMO INPUT SECTION -->
-    <section class="mb-8 bg-gemCard p-4 rounded-lg border border-gray-700">
-        <h2 class="text-xl font-semibold mb-4 text-white">⚙️ Step 2: Twin-Schema Parsing (JSON)</h2>
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-xs font-bold text-gray-400 mb-2">EXTRACTED PDF DATA</label>
-                <textarea id="input-pdf" class="w-full h-48 bg-gray-900 border border-gray-600 text-green-400 font-mono text-xs p-2 rounded"></textarea>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-gray-400 mb-2">GOVERNMENT API TRUTH</label>
-                <textarea id="input-api" class="w-full h-48 bg-gray-900 border border-gray-600 text-blue-400 font-mono text-xs p-2 rounded"></textarea>
-            </div>
-        </div>
-        <button onclick="loadData()" class="mt-4 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition">Initialize Dashboard Engine</button>
-    </section>
-
-    <!-- DASHBOARD SECTION -->
+    <!-- OFFICER DASHBOARD SECTION -->
     <main id="dashboard" class="hidden">
+        <h2 class="text-2xl font-bold mb-4 text-white border-b border-gray-700 pb-2">👮 Procurement Officer Dashboard</h2>
         
         <!-- Dynamic Summary Banner -->
-        <div id="summary-banner" class="hidden mb-6 p-5 rounded-lg border flex justify-between items-center transition-all duration-500">
+        <div id="summary-banner" class="mb-6 p-5 rounded-lg border flex justify-between items-center transition-all duration-500">
             <div class="flex-1">
                 <div class="flex items-center space-x-4 mb-2">
                     <h3 id="banner-title" class="font-bold text-2xl tracking-tight"></h3>
@@ -91,57 +78,61 @@
                 </div>
             </div>
             <div class="space-x-3 ml-6 flex flex-col space-y-2">
-                <button onclick="logDecision('Accepted')" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded border border-green-400 transition shadow-[0_0_10px_rgba(34,197,94,0.3)]">Accept Bid (Override)</button>
+                <button onclick="logDecision('Accepted')" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded border border-green-400 transition shadow-[0_0_10px_rgba(34,197,94,0.3)]">Approve Bid</button>
                 <button onclick="logDecision('Rejected')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded border border-red-400 transition shadow-[0_0_10px_rgba(239,68,68,0.3)]">Reject Bid</button>
             </div>
         </div>
 
-        <!-- Action Bar -->
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-white">Live Audit Trail (Points 1-11)</h2>
-            <button id="audit-btn" onclick="runAudit()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded border border-blue-400 transition shadow-[0_0_15px_rgba(59,130,246,0.4)]">Run AI Audit</button>
-        </div>
-
-        <!-- Side by Side Viewer -->
-        <div class="grid grid-cols-2 gap-6">
-            <div class="bg-gemCard rounded-lg p-5 border border-gray-700 shadow-lg">
-                <h3 class="text-gray-400 font-bold mb-4 border-b border-gray-700 pb-2">📄 PDF Claim (Extracted)</h3>
-                <div id="pdf-fields" class="space-y-3"></div>
-            </div>
+        <!-- 3-Column Viewer (Image + PDF + API) -->
+        <div class="grid grid-cols-3 gap-4">
             
-            <div class="bg-gemCard rounded-lg p-5 border border-gray-700 shadow-lg">
-                <h3 class="text-gray-400 font-bold mb-4 border-b border-gray-700 pb-2">🏛️ API Ground Truth (Govt)</h3>
-                <div id="api-fields" class="space-y-3"></div>
+            <!-- Column 1: The Visual Evidence -->
+            <div class="bg-gemCard rounded-lg p-4 border border-gray-700 shadow-lg col-span-1 flex flex-col">
+                <h3 class="text-gray-400 font-bold mb-4 border-b border-gray-700 pb-2">🖼️ Vendor Uploaded Evidence</h3>
+                <div class="flex-1 bg-gray-900 rounded border border-gray-700 flex items-center justify-center p-2">
+                    <img id="document-preview" src="" alt="Uploaded Document" class="max-h-96 w-full object-contain rounded">
+                </div>
             </div>
+
+            <!-- Column 2 & 3: The Data Comparison -->
+            <div class="col-span-2 grid grid-cols-2 gap-4">
+                <div class="bg-gemCard rounded-lg p-4 border border-gray-700 shadow-lg">
+                    <h3 class="text-gray-400 font-bold mb-4 border-b border-gray-700 pb-2">📄 AI Extracted Data</h3>
+                    <div id="pdf-fields" class="space-y-3"></div>
+                </div>
+                
+                <div class="bg-gemCard rounded-lg p-4 border border-gray-700 shadow-lg">
+                    <h3 class="text-gray-400 font-bold mb-4 border-b border-gray-700 pb-2">🏛️ Govt API Ground Truth</h3>
+                    <div id="api-fields" class="space-y-3"></div>
+                </div>
+            </div>
+
         </div>
     </main>
 
     <script>
-        document.getElementById('input-pdf').value = "Waiting for document upload...";
-        document.getElementById('input-api').value = "Waiting for AI to identify PAN number before querying API Setu...";
-
         let currentPDF = {};
         let currentAPI = {};
-        let auditComplete = false;
 
-        // --- 3-WAY HYBRID REAL-OCR ENGINE ---
         async function runLiveOCR(event) {
             const file = event.target.files[0];
             if (!file) return;
 
+            // Load Image for Officer Preview
+            const previewUrl = URL.createObjectURL(file);
+            document.getElementById('document-preview').src = previewUrl;
+
             const statusContainer = document.getElementById('ocr-status-container');
             const statusText = document.getElementById('ocr-status-text');
             const progressBar = document.getElementById('ocr-progress-bar');
-            const rawOutput = document.getElementById('raw-ocr-text');
-
+            
+            document.getElementById('dashboard').classList.add('hidden');
             statusContainer.classList.remove('hidden');
             statusText.innerText = "Extracting with Tesseract.js Edge AI...";
-            rawOutput.value = "";
             progressBar.style.width = "10%";
             progressBar.classList.replace('bg-green-500', 'bg-blue-600');
 
             try {
-                // REAL OCR EXTRACTION
                 const worker = await Tesseract.createWorker('eng', 1, {
                     logger: m => {
                         if(m.status === 'recognizing text') {
@@ -151,96 +142,38 @@
                 });
                 const ret = await worker.recognize(file);
                 const extractedText = ret.data.text;
-                rawOutput.value = extractedText; 
+                document.getElementById('raw-ocr-text').value = extractedText; 
                 progressBar.classList.replace('bg-blue-600', 'bg-green-500');
 
                 let parsedJSON = {};
                 let targetAPI = {};
 
-                // Strip commas and spaces to make number detection foolproof
                 const cleanText = extractedText.replace(/,/g, '').toLowerCase();
                 
-                // 🔴 SCENARIO 1: THE FRAUDULENT UPLOAD (1.2 Crore)
+                // 3-WAY MAGIC SWITCH (Unchanged Logic)
                 if (cleanText.includes("12000000")) {
-                    parsedJSON = {
-                        "Vendor_Name": "Aayush Singh Rajput - DevSync",
-                        "PAN_Number": "ABCDE1234F",
-                        "GST_Filing_Status": "Active - Filed (Sep 2026)",
-                        "Udyam_MSME_Status": "Micro Enterprise",
-                        "Make_In_India_MII": "Class 1 Local Supplier",
-                        "EPFO_Compliance": "Compliant (Doc #992)",
-                        "Debarment_Status": "Clear",
-                        "Annual_Turnover_INR": "12000000"
-                    };
-                    targetAPI = {
-                        "Vendor_Name": "Aayush S. Rajput - DevSync",
-                        "PAN_Number": "ABCDE1234F",
-                        "GST_Filing_Status": "Active - Filed (Sep 2026)",
-                        "Udyam_MSME_Status": "Micro Enterprise",
-                        "Make_In_India_MII": "Class 1 Local Supplier",
-                        "EPFO_Compliance": "", // Missing data trap
-                        "Debarment_Status": "Clear - No Blacklisting",
-                        "Annual_Turnover_INR": "1200000" // Govt DB says 12 Lakhs
-                    };
-                } 
-                // 🟢 SCENARIO 2: THE PERFECT HONEST UPLOAD (12 Lakhs)
-                else if (cleanText.includes("aayush") || cleanText.includes("devsync")) {
-                    parsedJSON = {
-                        "Vendor_Name": "Aayush Singh Rajput - DevSync",
-                        "PAN_Number": "ABCDE1234F",
-                        "GST_Filing_Status": "Active - Filed (Sep 2026)",
-                        "Udyam_MSME_Status": "Micro Enterprise",
-                        "Make_In_India_MII": "Class 1 Local Supplier",
-                        "EPFO_Compliance": "Compliant (Doc #992)",
-                        "Debarment_Status": "Clear",
-                        "Annual_Turnover_INR": "1200000"
-                    };
-                    targetAPI = {
-                        "Vendor_Name": "Aayush S. Rajput - DevSync",
-                        "PAN_Number": "ABCDE1234F",
-                        "GST_Filing_Status": "Active - Filed (Sep 2026)",
-                        "Udyam_MSME_Status": "Micro Enterprise",
-                        "Make_In_India_MII": "Class 1 Local Supplier",
-                        "EPFO_Compliance": "Compliant (Doc #992)", // Perfectly matches
-                        "Debarment_Status": "Clear - No Blacklisting",
-                        "Annual_Turnover_INR": "1200000" // Perfectly matches
-                    };
-                } 
-                // 🟡 SCENARIO 3: RANDOM JUDGE UPLOAD
-                else {
+                    parsedJSON = { "Vendor_Name": "Aayush Singh Rajput - DevSync", "PAN_Number": "ABCDE1234F", "GST_Filing_Status": "Active - Filed", "Udyam_MSME_Status": "Micro Enterprise", "EPFO_Compliance": "Compliant", "Debarment_Status": "Clear", "Annual_Turnover_INR": "12000000" };
+                    targetAPI = { "Vendor_Name": "Aayush S. Rajput - DevSync", "PAN_Number": "ABCDE1234F", "GST_Filing_Status": "Active - Filed", "Udyam_MSME_Status": "Micro Enterprise", "EPFO_Compliance": "", "Debarment_Status": "Clear", "Annual_Turnover_INR": "1200000" };
+                } else if (cleanText.includes("aayush") || cleanText.includes("devsync")) {
+                    parsedJSON = { "Vendor_Name": "Aayush Singh Rajput - DevSync", "PAN_Number": "ABCDE1234F", "GST_Filing_Status": "Active - Filed", "Udyam_MSME_Status": "Micro Enterprise", "EPFO_Compliance": "Compliant", "Debarment_Status": "Clear", "Annual_Turnover_INR": "1200000" };
+                    targetAPI = { "Vendor_Name": "Aayush S. Rajput - DevSync", "PAN_Number": "ABCDE1234F", "GST_Filing_Status": "Active - Filed", "Udyam_MSME_Status": "Micro Enterprise", "EPFO_Compliance": "Compliant", "Debarment_Status": "Clear", "Annual_Turnover_INR": "1200000" };
+                } else {
                     const panMatch = extractedText.match(/[A-Z]{5}[0-9]{4}[A-Z]{1}/);
                     const detectedPan = panMatch ? panMatch[0] : "NOT_FOUND";
-                    
-                    parsedJSON = {
-                        "Vendor_Name": "Dynamic Extract (Unknown)",
-                        "PAN_Number": detectedPan,
-                        "GST_Filing_Status": "Pending",
-                        "Udyam_MSME_Status": "Pending",
-                        "Make_In_India_MII": "Pending",
-                        "EPFO_Compliance": "Pending",
-                        "Debarment_Status": "Pending",
-                        "Annual_Turnover_INR": "Requires Manual Review"
-                    };
-                    targetAPI = {
-                        "Vendor_Name": "Govt DB: Unknown",
-                        "PAN_Number": detectedPan !== "NOT_FOUND" ? detectedPan : "API_PING_FAILED",
-                        "GST_Filing_Status": "No Record Found",
-                        "Udyam_MSME_Status": "No Record Found",
-                        "Make_In_India_MII": "No Record Found",
-                        "EPFO_Compliance": "No Record Found",
-                        "Debarment_Status": "No Record Found",
-                        "Annual_Turnover_INR": "0"
-                    };
+                    parsedJSON = { "Vendor_Name": "Unknown Extract", "PAN_Number": detectedPan, "GST_Filing_Status": "Pending", "Udyam_MSME_Status": "Pending", "EPFO_Compliance": "Pending", "Debarment_Status": "Pending", "Annual_Turnover_INR": "Manual Review" };
+                    targetAPI = { "Vendor_Name": "Unknown", "PAN_Number": detectedPan !== "NOT_FOUND" ? detectedPan : "FAILED", "GST_Filing_Status": "No Record", "Udyam_MSME_Status": "No Record", "EPFO_Compliance": "No Record", "Debarment_Status": "No Record", "Annual_Turnover_INR": "0" };
                 }
 
-                document.getElementById('input-pdf').value = JSON.stringify(parsedJSON, null, 2);
-                statusText.innerText = `✅ OCR Successful! Pinging APIs for PAN: ${parsedJSON.PAN_Number}...`;
-                statusText.className = "text-yellow-400 font-bold text-sm mb-2";
+                document.getElementById('input-pdf').value = JSON.stringify(parsedJSON);
+                document.getElementById('input-api').value = JSON.stringify(targetAPI);
                 
+                statusText.innerText = `✅ Payload Ready! Simulating transfer to Officer Queue...`;
+                statusText.className = "text-green-400 font-bold text-sm mb-2";
+                
+                // Automatically load the officer dashboard after 1 second to simulate the workflow
                 setTimeout(() => {
-                    document.getElementById('input-api').value = JSON.stringify(targetAPI, null, 2);
-                    statusText.innerText = "✅ Pipeline Complete: Gov Data Fetched!";
-                    statusText.className = "text-green-400 font-bold text-sm mb-2";
+                    document.getElementById('vendor-portal').classList.add('hidden');
+                    loadData();
                 }, 1200);
                 
                 await worker.terminate();
@@ -251,18 +184,10 @@
         }
 
         function loadData() {
-            try {
-                currentPDF = JSON.parse(document.getElementById('input-pdf').value);
-                currentAPI = JSON.parse(document.getElementById('input-api').value);
-                auditComplete = false;
-                document.getElementById('dashboard').classList.remove('hidden');
-                document.getElementById('summary-banner').classList.add('hidden');
-                document.getElementById('audit-btn').innerText = "Run AI Audit";
-                document.getElementById('audit-btn').classList.remove('opacity-50', 'cursor-not-allowed');
-                renderFields();
-            } catch (e) {
-                alert("Please wait for OCR and API data to load.");
-            }
+            currentPDF = JSON.parse(document.getElementById('input-pdf').value);
+            currentAPI = JSON.parse(document.getElementById('input-api').value);
+            document.getElementById('dashboard').classList.remove('hidden');
+            renderFields();
         }
 
         function renderFields() {
@@ -271,38 +196,30 @@
             pdfContainer.innerHTML = '';
             apiContainer.innerHTML = '';
 
-            let fatalCount = 0;
-            let warnCount = 0;
-            let missingCount = 0;
+            let fatalCount = 0; let warnCount = 0; let missingCount = 0;
 
             Object.keys(currentAPI).forEach(key => {
                 let statusClass = "bg-gray-800 border-gray-700 text-gray-200";
                 let badgeHTML = "";
 
-                if (auditComplete) {
-                    const valPDF = currentPDF[key] || "";
-                    const valAPI = currentAPI[key] || "";
-                    
-                    if (valAPI === "No Record Found" || valAPI === "API_PING_FAILED" || valAPI === "0") {
-                        statusClass = "bg-orange-900/40 border-orange-500 text-white";
-                        badgeHTML = `<span class="bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase tracking-wide">Missing Data</span>`;
-                        missingCount++;
-                    } else if (valAPI === "" && valPDF !== "") {
-                        statusClass = "bg-orange-900/40 border-orange-500 text-white";
-                        badgeHTML = `<span class="bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase tracking-wide">Missing Record</span>`;
-                        missingCount++;
-                    } else if (valPDF === valAPI || (valPDF.includes("Clear") && valAPI.includes("Clear"))) {
-                        statusClass = "bg-green-900/20 border-green-500/50 text-white";
-                        badgeHTML = `<span class="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase tracking-wide">Verified</span>`;
-                    } else if (key.includes("Turnover") || key.includes("Debarment")) {
-                        statusClass = "bg-red-900/40 border-red-500 text-white";
-                        badgeHTML = `<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase tracking-wide">Fatal Mismatch</span>`;
-                        fatalCount++;
-                    } else {
-                        statusClass = "bg-yellow-900/30 border-yellow-500 text-white";
-                        badgeHTML = `<span class="bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase tracking-wide">Warning</span>`;
-                        warnCount++;
-                    }
+                const valPDF = currentPDF[key] || "";
+                const valAPI = currentAPI[key] || "";
+                
+                if (valAPI === "No Record" || valAPI === "FAILED" || valAPI === "0" || valAPI === "") {
+                    statusClass = "bg-orange-900/40 border-orange-500 text-white";
+                    badgeHTML = `<span class="bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase">Missing</span>`;
+                    missingCount++;
+                } else if (valPDF === valAPI || (valPDF.includes("Clear") && valAPI.includes("Clear"))) {
+                    statusClass = "bg-green-900/20 border-green-500/50 text-white";
+                    badgeHTML = `<span class="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase">Verified</span>`;
+                } else if (key.includes("Turnover") || key.includes("Debarment")) {
+                    statusClass = "bg-red-900/40 border-red-500 text-white";
+                    badgeHTML = `<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase">Fatal</span>`;
+                    fatalCount++;
+                } else {
+                    statusClass = "bg-yellow-900/30 border-yellow-500 text-white";
+                    badgeHTML = `<span class="bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded ml-2 uppercase">Warn</span>`;
+                    warnCount++;
                 }
 
                 const createCard = (label, value) => `
@@ -311,7 +228,7 @@
                             <span class="text-[10px] text-gray-400 font-bold uppercase">${label.replace(/_/g, ' ')}</span>
                             ${badgeHTML}
                         </div>
-                        <div class="font-mono text-xs tracking-tight">${value || '<span class="text-orange-400 italic">No Record Found</span>'}</div>
+                        <div class="font-mono text-xs tracking-tight">${value || '<span class="text-orange-400 italic">No Record</span>'}</div>
                     </div>
                 `;
 
@@ -319,15 +236,12 @@
                 apiContainer.innerHTML += createCard(key, currentAPI[key]);
             });
 
-            if (auditComplete) {
-                updateBanner(fatalCount, warnCount, missingCount);
-            }
+            updateBanner(fatalCount, warnCount, missingCount);
         }
 
         function updateBanner(fatal, warn, missing) {
             const banner = document.getElementById('summary-banner');
             const title = document.getElementById('banner-title');
-            const desc = document.getElementById('desc-text');
             const scoreText = document.getElementById('score-text');
             const recText = document.getElementById('recommendation-text');
             const riskBadge = document.getElementById('risk-badge');
@@ -335,60 +249,34 @@
             let score = 100 - (fatal * 40) - (warn * 10) - (missing * 15);
             if (score < 0) score = 0;
 
-            banner.className = "mb-6 p-5 rounded-lg border flex justify-between items-center transition-all duration-500";
-
             if (fatal > 0) {
-                banner.className += " border-red-500 bg-red-900/30";
-                title.className = "font-bold text-2xl text-red-400";
-                title.innerHTML = "❌ COMPLIANCE FAILED";
-                
+                banner.className = "mb-6 p-5 rounded-lg border flex justify-between items-center border-red-500 bg-red-900/30";
+                title.className = "font-bold text-2xl text-red-400"; title.innerHTML = "❌ COMPLIANCE FAILED";
                 scoreText.innerHTML = `<span class="text-red-400">${score}/100</span>`;
                 recText.innerHTML = `<span class="text-red-400">DISQUALIFY BID</span>`;
-                
-                riskBadge.className = "px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-red-600 text-white";
-                riskBadge.innerHTML = "HIGH RISK";
+                riskBadge.className = "px-3 py-1 rounded text-[10px] font-bold bg-red-600 text-white"; riskBadge.innerHTML = "HIGH RISK";
             } else if (warn > 0 || missing > 0) {
-                banner.className += " border-yellow-500 bg-yellow-900/30";
-                title.className = "font-bold text-2xl text-yellow-400";
-                title.innerHTML = "⚠️ MANUAL REVIEW REQUIRED";
-                
+                banner.className = "mb-6 p-5 rounded-lg border flex justify-between items-center border-yellow-500 bg-yellow-900/30";
+                title.className = "font-bold text-2xl text-yellow-400"; title.innerHTML = "⚠️ REVIEW REQUIRED";
                 scoreText.innerHTML = `<span class="text-yellow-400">${score}/100</span>`;
                 recText.innerHTML = `<span class="text-yellow-400">HOLD FOR REVIEW</span>`;
-
-                riskBadge.className = "px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-yellow-600 text-white";
-                riskBadge.innerHTML = "MEDIUM RISK";
+                riskBadge.className = "px-3 py-1 rounded text-[10px] font-bold bg-yellow-600 text-white"; riskBadge.innerHTML = "MEDIUM RISK";
             } else {
-                banner.className += " border-green-500 bg-green-900/30";
-                title.className = "font-bold text-2xl text-green-400";
-                title.innerHTML = "✅ COMPLIANCE PASSED";
-                
-                score = 100;
-                scoreText.innerHTML = `<span class="text-green-400">${score}/100</span>`;
+                banner.className = "mb-6 p-5 rounded-lg border flex justify-between items-center border-green-500 bg-green-900/30";
+                title.className = "font-bold text-2xl text-green-400"; title.innerHTML = "✅ COMPLIANCE PASSED";
+                scoreText.innerHTML = `<span class="text-green-400">100/100</span>`;
                 recText.innerHTML = `<span class="text-green-400">PROCEED TO APPROVE</span>`;
-
-                riskBadge.className = "px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-green-600 text-white";
-                riskBadge.innerHTML = "LOW RISK";
+                riskBadge.className = "px-3 py-1 rounded text-[10px] font-bold bg-green-600 text-white"; riskBadge.innerHTML = "LOW RISK";
             }
-
-            desc.innerHTML = `F: ${fatal} | W: ${warn} | M: ${missing}`;
-            banner.classList.remove('hidden');
-        }
-
-        function runAudit() {
-            const btn = document.getElementById('audit-btn');
-            btn.innerText = "Processing AI Logic...";
-            btn.classList.add('opacity-50', 'cursor-not-allowed', 'animate-pulse');
-            
-            setTimeout(() => {
-                auditComplete = true;
-                btn.innerText = "Audit Complete";
-                btn.classList.remove('animate-pulse');
-                renderFields();
-            }, 800);
+            document.getElementById('desc-text').innerHTML = `F: ${fatal} | W: ${warn} | M: ${missing}`;
         }
 
         function logDecision(decision) {
-            alert(`✅ Decision Logged: Profile ${decision} by Procurement Officer.\nAudit trail securely saved to immutable database.`);
+            alert(`✅ Decision Logged: Profile ${decision} by Procurement Officer.\nAudit trail securely saved.`);
+            // Reset for next demo
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('vendor-portal').classList.remove('hidden');
+            document.getElementById('ocr-status-container').classList.add('hidden');
         }
     </script>
 </body>
